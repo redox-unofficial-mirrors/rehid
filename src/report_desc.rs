@@ -92,7 +92,11 @@ pub struct GlobalItemsState {
 #[derive(Debug)]
 pub struct Invalid;
 
-pub fn update_global_state(current_state: &mut GlobalItemsState, stack: &mut Vec<GlobalItemsState>, report_item: &ReportItem) -> Result<(), Invalid> {
+pub fn update_global_state(
+    current_state: &mut GlobalItemsState,
+    stack: &mut Vec<GlobalItemsState>,
+    report_item: &ReportItem,
+) -> Result<(), Invalid> {
     match report_item {
         ReportItem::Global(global) => match global {
             &GlobalItem::UsagePage(u) => current_state.usage_page = Some(u),
@@ -107,7 +111,7 @@ pub fn update_global_state(current_state: &mut GlobalItemsState, stack: &mut Vec
             &GlobalItem::ReportCount(c) => current_state.report_count = Some(c),
             &GlobalItem::Push => stack.push(*current_state),
             &GlobalItem::Pop => *current_state = stack.pop().ok_or(Invalid)?,
-        }
+        },
         ReportItem::Local(local) => (), // TODO
         ReportItem::Main(_) => (),
     }
@@ -128,9 +132,9 @@ pub enum LocalItem {
     Delimeter(u32),
 }
 
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct LocalItemsState {
-    pub usage: Option<u32>,
+    pub usages: Vec<u32>,
     pub usage_min: Option<u32>,
     pub usage_max: Option<u32>,
     pub desig_idx: Option<u32>,
@@ -143,7 +147,7 @@ pub struct LocalItemsState {
 pub fn update_local_state(current_state: &mut LocalItemsState, report_item: &ReportItem) {
     match report_item {
         ReportItem::Local(local) => match local {
-            &LocalItem::Usage(u) => current_state.usage = Some(u),
+            &LocalItem::Usage(u) => current_state.usages.push(u),
             &LocalItem::UsageMinimum(m) => current_state.usage_min = Some(m),
             &LocalItem::UsageMaximum(m) => current_state.usage_max = Some(m),
             &LocalItem::DesignatorIndex(i) => current_state.desig_idx = Some(i),

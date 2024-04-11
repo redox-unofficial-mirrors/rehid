@@ -5,4 +5,9 @@ edition = "2021"
 
 [dependencies]
 bitflags = "2"
+log = "0.4"
 ux = "0.1"
+
+[dev-dependencies]
+env_logger = "0.11"
+hidapi = "2.6"

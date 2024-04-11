@@ -1,0 +1,8 @@
+[package]
+name = "rehid"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bitflags = "2"
+ux = "0.1"

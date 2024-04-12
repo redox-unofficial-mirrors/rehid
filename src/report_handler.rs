@@ -21,7 +21,7 @@ fn div_round_up(num: usize, denom: usize) -> usize {
 pub struct ReportEvent {
     pub usage_page: u32,
     pub usage: u32,
-    pub value: u32,
+    pub value: i32,
     pub relative: bool,
 }
 
@@ -37,7 +37,7 @@ pub struct ReportInput {
 pub struct ReportHandler {
     pub inputs: Vec<ReportInput>,
     pub total_byte_length: usize,
-    pub absolutes: HashMap<(u32, u32), u32>,
+    pub absolutes: HashMap<(u32, u32), i32>,
     pub arrays: HashSet<(u32, u32)>,
 }
 
@@ -177,7 +177,7 @@ impl ReportHandler {
                 let report_bit_index = (report_i * report_size) as usize;
                 log::trace!("    {report_i}@{report_bit_index}");
 
-                let mut value = 0;
+                let mut value = 0i32;
                 for bit_index in 0..report_size {
                     match binary_view.get(report_bit_index + bit_index as usize) {
                         Some(bit) => {
@@ -196,7 +196,6 @@ impl ReportHandler {
                     log::trace!("      usage page not found");
                     continue;
                 };
-
                 let usage = if variable {
                     match local_state.usage_min {
                         Some(usage_min) => usage_min + report_i,
@@ -210,19 +209,28 @@ impl ReportHandler {
                         },
                     }
                 } else {
-                    let usage = value;
+                    let usage = value as u32;
                     value = 1;
                     usage
                 };
-
                 log::trace!("      usage 0x{usage_page:X}:0x{usage:X}");
-                if let Some(logical_min) = global_state.logical_min {
-                    log::trace!("      logical min 0x{logical_min:X}")
+
+                let logical_min = global_state.logical_min.unwrap_or(0);
+                let logical_max = global_state.logical_max.unwrap_or((1 << report_size) - 1);
+                log::trace!("      logical 0x{logical_min:X}:0x{logical_max:X}");
+
+                if logical_min > logical_max {
+                    // Sign extend if logical_min is less than logical max, meaning the value is
+                    // signed using two's complement
+                    for bit_index in report_size..32 {
+                        if value & (1 << (bit_index - 1)) != 0 {
+                            value |= 1 << bit_index;
+                        } else {
+                            break;
+                        }
+                    }
                 }
 
-                if let Some(logical_max) = global_state.logical_max {
-                    log::trace!("      logical max 0x{logical_max:X}")
-                }
                 log::trace!("      value 0x{value:0X}");
 
                 if !variable {

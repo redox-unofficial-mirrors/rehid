@@ -2,7 +2,7 @@
 
 use hidapi::HidApi;
 use rehid::report_handler::ReportHandler;
-use std::{collections::VecDeque, io};
+use std::io;
 
 fn main() {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
@@ -55,7 +55,7 @@ fn main() {
                                 Ok(length) => {
                                     log::debug!("    Report {:X?}", &mut report[..length]);
                                     for event in handler.handle(&report[..length]).unwrap() {
-                                        log::info!("{:X?}", event);
+                                        log::info!("{:?}", event);
                                     }
                                 }
                                 Err(err) => {

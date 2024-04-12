@@ -31,6 +31,18 @@ fn main() {
             let number: usize = line.trim().parse().unwrap();
             let info = infos.get(number).unwrap();
 
+            println!(
+                "{} ({:04X}:{:04X} interface {} path {:?}):",
+                match info.product_string() {
+                    Some(s) => s,
+                    _ => "<COULD NOT FETCH>",
+                },
+                info.vendor_id(),
+                info.product_id(),
+                info.interface_number(),
+                info.path()
+            );
+
             let mut descriptor = vec![0u8; 2048];
             match info.open_device(&api) {
                 Ok(dev) => match dev.get_report_descriptor(&mut descriptor) {

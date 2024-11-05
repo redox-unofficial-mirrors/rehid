@@ -4,9 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-bitflags = "2"
+# https://github.com/hidutils/hidreport/pull/18
+hidreport = { git = "https://github.com/jackpot51/hidreport" }
 log = "0.4"
-ux = "0.1"
 
 [dev-dependencies]
 env_logger = "0.11"

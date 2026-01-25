@@ -7,6 +7,8 @@ edition = "2021"
 # https://github.com/hidutils/hidreport/pull/18
 hidreport = { git = "https://github.com/jackpot51/hidreport" }
 log = "0.4"
+strum = "0.27"
+strum_macros = "0.27"
 
 [dev-dependencies]
 env_logger = "0.11"

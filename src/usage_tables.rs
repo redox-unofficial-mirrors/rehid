@@ -1,6 +1,7 @@
 // See https://www.usb.org/sites/default/files/documents/hut1_12v2.pdf
 
 #[repr(u16)]
+#[derive(strum_macros::IntoStaticStr, strum_macros::FromRepr)]
 pub enum UsagePage {
     GenericDesktop = 0x01,
     SimulationsControl = 0x02,
@@ -21,6 +22,7 @@ pub enum UsagePage {
 }
 
 #[repr(u16)]
+#[derive(strum_macros::IntoStaticStr, strum_macros::FromRepr)]
 pub enum GenericDesktopUsage {
     Pointer = 0x01,
     Mouse = 0x02,
@@ -83,6 +85,7 @@ pub enum GenericDesktopUsage {
 }
 
 #[repr(u8)]
+#[derive(strum_macros::IntoStaticStr, strum_macros::FromRepr)]
 pub enum KeyboardOrKeypadUsage {
     KbdErrorRollover = 0x1,
     KbdPostFail,

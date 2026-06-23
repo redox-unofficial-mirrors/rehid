@@ -1,13 +1,15 @@
+use hidreport::{Field, FieldId, Report, ReportDescriptor};
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::fmt::{Debug, Display};
 use std::vec::Drain;
 
-use crate::hidreport::{Field, Report, ReportDescriptor};
 use crate::usage_tables::{GenericDesktopUsage, KeyboardOrKeypadUsage, UsagePage};
 
 #[derive(Debug, Clone)]
 pub struct ReportEvent {
+    pub report_id: Option<u8>,
+    pub field_id: u32,
     pub usage_page: u16,
     pub usage: u16,
     pub value: i64,
@@ -51,8 +53,8 @@ pub struct ReportHandler {
     pub descriptor: ReportDescriptor,
     pub total_byte_length: usize,
     pub absolutes: HashMap<(u16, u16), i64>,
-    pub arrays: HashSet<(u16, u16)>,
-    next_arrays: HashSet<(u16, u16)>,
+    pub arrays: HashSet<(Option<u8>, u32, u16, u16)>,
+    next_arrays: HashSet<(Option<u8>, u32, u16, u16)>,
     event_buffer: Vec<ReportEvent>,
 }
 
@@ -84,7 +86,9 @@ impl ReportHandler {
         self.next_arrays.clear();
 
         if let Some(report) = self.descriptor.find_input_report(report_bytes) {
+            let report_id = report.report_id().map(u8::from);
             for field in report.fields() {
+                let field_id = field.id().into();
                 match field {
                     Field::Variable(variable) => {
                         let usage_page = variable.usage.usage_page.into();
@@ -111,6 +115,8 @@ impl ReportHandler {
                             self.absolutes.insert((usage_page, usage), value);
                         }
                         let ev = ReportEvent {
+                            report_id,
+                            field_id,
                             usage_page,
                             usage,
                             value,
@@ -138,6 +144,8 @@ impl ReportHandler {
                             log::trace!("  = {:?}", index);
                             if let Some(usage) = array.usages().get(usize::try_from(index)?) {
                                 self.next_arrays.insert((
+                                    report_id,
+                                    field_id,
                                     u16::from(usage.usage_page),
                                     u16::from(usage.usage_id),
                                 ));
@@ -149,10 +157,15 @@ impl ReportHandler {
             }
         }
 
-        for &(usage_page, usage) in self.arrays.iter() {
-            if !self.next_arrays.contains(&(usage_page, usage)) {
+        for &(report_id, field_id, usage_page, usage) in self.arrays.iter() {
+            if !self
+                .next_arrays
+                .contains(&(report_id, field_id, usage_page, usage))
+            {
                 // Release array items missing from next_arrays
                 self.event_buffer.push(ReportEvent {
+                    report_id,
+                    field_id,
                     usage_page,
                     usage,
                     value: 0,
@@ -160,10 +173,15 @@ impl ReportHandler {
                 });
             }
         }
-        for &(usage_page, usage) in self.next_arrays.iter() {
-            if !self.arrays.contains(&(usage_page, usage)) {
+        for &(report_id, field_id, usage_page, usage) in self.next_arrays.iter() {
+            if !self
+                .arrays
+                .contains(&(report_id, field_id, usage_page, usage))
+            {
                 // Press array items only in next_arrays
                 self.event_buffer.push(ReportEvent {
+                    report_id,
+                    field_id,
                     usage_page,
                     usage,
                     value: 1,

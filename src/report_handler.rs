@@ -1,4 +1,4 @@
-use hidreport::{Field, FieldId, Report, ReportDescriptor};
+use hidreport::{Field, FieldAttributes, Report, ReportDescriptor};
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::fmt::{Debug, Display};
@@ -94,11 +94,11 @@ impl ReportHandler {
                         let usage_page = variable.usage.usage_page.into();
                         let usage = variable.usage.usage_id.into();
                         let value = if variable.is_signed() {
-                            i64::from(variable.extract_i32(&report_bytes)?)
+                            i64::from(i32::from(variable.extract(report_bytes)?))
                         } else {
-                            i64::from(variable.extract_u32(&report_bytes)?)
+                            i64::from(u32::from(variable.extract(report_bytes)?))
                         };
-                        let relative = variable.is_relative;
+                        let relative = variable.is_relative();
                         if relative {
                             if value == 0 {
                                 // Skip relative events where value has not changed
@@ -140,9 +140,9 @@ impl ReportHandler {
                             array.report_count,
                         );
                         //TODO: use array.is_signed?
-                        for index in array.extract_u32(&report_bytes)? {
+                        for index in array.extract(report_bytes)? {
                             log::trace!("  = {:?}", index);
-                            if let Some(usage) = array.usages().get(usize::try_from(index)?) {
+                            if let Some(usage) = array.usages().get(usize::try_from(u32::from(index))?) {
                                 self.next_arrays.insert((
                                     report_id,
                                     field_id,
